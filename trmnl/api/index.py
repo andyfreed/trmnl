@@ -6,7 +6,6 @@ No external API needed — positions computed from NASA/JPL orbital elements.
 """
 
 from http.server import BaseHTTPRequestHandler
-import base64
 import json
 import math
 from datetime import datetime, timezone
@@ -73,14 +72,9 @@ PLANETS = {
     },
 }
 
-PLANET_ABBREV = {
-    "Mercury": "Me", "Venus": "Ve", "Earth": "Ea", "Mars": "Ma",
-    "Jupiter": "Ju", "Saturn": "Sa", "Uranus": "Ur", "Neptune": "Ne",
-}
-
-PLANET_DOT_R = {
-    "Mercury": 2, "Venus": 3, "Earth": 3.5, "Mars": 2.5,
-    "Jupiter": 5, "Saturn": 4.5, "Uranus": 4, "Neptune": 4,
+PLANET_SYMBOLS = {
+    "Mercury": "\u263f", "Venus": "\u2640", "Earth": "\u2641", "Mars": "\u2642",
+    "Jupiter": "\u2643", "Saturn": "\u2644", "Uranus": "\u2645", "Neptune": "\u2646",
 }
 
 
@@ -106,7 +100,7 @@ def solve_kepler(M_deg, e):
     return E
 
 
-def compute_planet_position(name, elems, T):
+def compute_planet(name, elems, T):
     a = elems["a"][0] + elems["a"][1] * T
     e = elems["e"][0] + elems["e"][1] * T
     L = elems["L"][0] + elems["L"][1] * T
@@ -129,113 +123,39 @@ def compute_planet_position(name, elems, T):
     y = x_ecl * math.sin(Omega_rad) + y_ecl * math.cos(Omega_rad)
 
     dist = math.sqrt(x * x + y * y)
+    angle = math.degrees(math.atan2(y, x)) % 360
+
+    # Clock position (1-12) for intuitive display
+    clock = int(((90 - angle) % 360) / 30) + 1
+    if clock > 12:
+        clock = 12
+
+    # Compass direction
+    dirs = ["E", "ENE", "NE", "NNE", "N", "NNW", "NW", "WNW",
+            "W", "WSW", "SW", "SSW", "S", "SSE", "SE", "ESE"]
+    direction = dirs[int(((angle + 11.25) % 360) / 22.5)]
 
     return {
         "name": name,
-        "abbrev": PLANET_ABBREV[name],
-        "x_au": x,
-        "y_au": y,
-        "distance_au": round(dist, 2),
-        "semi_major": a,
+        "symbol": PLANET_SYMBOLS.get(name, ""),
+        "distance": f"{dist:.2f}",
+        "angle": f"{angle:.0f}",
+        "direction": direction,
+        "clock": f"{clock} o'clock",
     }
 
 
-def compute_all_planets():
-    T = julian_centuries_since_j2000()
-    return [compute_planet_position(name, elems, T)
-            for name, elems in PLANETS.items()]
-
-
-def scale_distance(au, max_au=32.0, max_px=200):
-    return (math.sqrt(au) / math.sqrt(max_au)) * max_px
-
-
-def generate_svg(planets, width, height, label_mode="full"):
-    cx = width / 2
-    cy = height / 2
-    margin = 30
-    max_r = min(cx, cy) - margin
-
-    lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" '
-        f'style="background:white">',
-    ]
-
-    # Orbital rings
-    for name, elems in PLANETS.items():
-        a = elems["a"][0]
-        r = scale_distance(a, max_px=max_r)
-        lines.append(
-            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" '
-            f'fill="none" stroke="#999" stroke-width="0.5" '
-            f'stroke-dasharray="3,5"/>'
-        )
-
-    # Sun
-    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6" fill="black"/>')
-    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="white"/>')
-    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="2" fill="black"/>')
-
-    # Planets
-    for p in planets:
-        dist = math.sqrt(p["x_au"] ** 2 + p["y_au"] ** 2)
-        if dist < 0.001:
-            continue
-        dist_px = scale_distance(dist, max_px=max_r)
-        angle = math.atan2(p["y_au"], p["x_au"])
-        px = cx + dist_px * math.cos(angle)
-        py = cy - dist_px * math.sin(angle)
-
-        dot_r = PLANET_DOT_R.get(p["name"], 3)
-
-        lines.append(
-            f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{dot_r}" fill="black"/>'
-        )
-
-        # Earth gets a ring marker
-        if p["name"] == "Earth":
-            lines.append(
-                f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{dot_r + 2.5}" '
-                f'fill="none" stroke="black" stroke-width="1.2"/>'
-            )
-
-        label = p["name"] if label_mode == "full" else p["abbrev"]
-        font_size = 10 if label_mode == "full" else 9
-        ly = py - dot_r - 5
-        lines.append(
-            f'<text x="{px:.1f}" y="{ly:.1f}" text-anchor="middle" '
-            f'font-family="sans-serif" font-size="{font_size}" '
-            f'fill="black">{label}</text>'
-        )
-
-    lines.append('</svg>')
-    return '\n'.join(lines)
-
-
-def svg_to_base64(svg_str):
-    return base64.b64encode(svg_str.encode('utf-8')).decode('ascii')
-
-
 def build_response():
-    raw_planets = compute_all_planets()
+    T = julian_centuries_since_j2000()
     now = datetime.now(timezone.utc)
 
-    svg_full = generate_svg(raw_planets, 480, 410, label_mode="full")
-    svg_half = generate_svg(raw_planets, 350, 210, label_mode="abbrev")
-    svg_quad = generate_svg(raw_planets, 300, 210, label_mode="abbrev")
-
-    planet_list = [
-        {"name": p["name"], "abbrev": p["abbrev"], "distance_au": p["distance_au"]}
-        for p in raw_planets
-    ]
+    planets = []
+    for name, elems in PLANETS.items():
+        planets.append(compute_planet(name, elems, T))
 
     return {
-        "planets": planet_list,
-        "img_full": svg_to_base64(svg_full),
-        "img_half": svg_to_base64(svg_half),
-        "img_quad": svg_to_base64(svg_quad),
+        "planets": planets,
+        "count": len(planets),
         "date": now.strftime("%b %d, %Y"),
         "time_utc": now.strftime("%H:%M UTC"),
     }

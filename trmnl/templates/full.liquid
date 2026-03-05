@@ -1,6 +1,5 @@
 <!--
   TRMNL Solar System Viewer — Full Screen Layout
-  Shows planet positions around the Sun with distance data.
 -->
 <div class="layout layout--col">
   <div class="columns">
@@ -9,22 +8,36 @@
         <h1>Solar System</h1>
       </div>
     </div>
-    <div class="column" style="text-align:right">
-      <span class="label label--gray">{{ date }} {{ time_utc }}</span>
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Planet</th>
+            <th style="text-align:right">Distance</th>
+            <th style="text-align:right">Direction</th>
+            <th style="text-align:right">Position</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for planet in planets %}
+          <tr>
+            <td><strong>{{ planet.name }}</strong></td>
+            <td style="text-align:right">{{ planet.distance }} AU</td>
+            <td style="text-align:right">{{ planet.direction }}</td>
+            <td style="text-align:right">{{ planet.clock }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="columns">
-    <div class="column" style="flex:3">
-      <img src="data:image/svg+xml;base64,{{ img_full }}" width="480" height="410" />
-    </div>
-    <div class="column" style="flex:1">
-      {% for planet in planets %}
-      <div class="meta" style="margin-bottom:4px">
-        <span class="title title--small">{{ planet.name }}</span>
-        <span class="description">{{ planet.distance_au }} AU</span>
-      </div>
-      {% endfor %}
+    <div class="column">
+      <span class="label label--gray">{{ date }} {{ time_utc }}</span>
     </div>
   </div>
 </div>

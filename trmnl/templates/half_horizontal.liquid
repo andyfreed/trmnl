@@ -1,6 +1,5 @@
 <!--
   TRMNL Solar System Viewer — Half Horizontal Layout
-  Compact solar system diagram with planet distances.
 -->
 <div class="layout layout--col gap--space-between">
   <div class="columns">
@@ -12,15 +11,16 @@
   </div>
 
   <div class="columns">
-    <div class="column" style="flex:2">
-      <img src="data:image/svg+xml;base64,{{ img_half }}" width="350" height="210" />
-    </div>
-    <div class="column" style="flex:1">
+    <div class="column">
       {% for planet in planets %}
-      <div style="margin-bottom:2px">
-        <span style="font-size:11px;font-weight:bold">{{ planet.abbrev }}</span>
-        <span style="font-size:10px">{{ planet.distance_au }} AU</span>
+      {% if forloop.index <= 4 %}
+      <div class="meta" {% unless forloop.last %}style="margin-bottom:8px"{% endunless %}>
+        <span class="title title--small">{{ planet.name }}</span>
+        <span class="description">
+          {{ planet.distance }} AU &middot; {{ planet.direction }}
+        </span>
       </div>
+      {% endif %}
       {% endfor %}
     </div>
   </div>

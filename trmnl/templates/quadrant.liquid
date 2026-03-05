@@ -1,6 +1,5 @@
 <!--
   TRMNL Solar System Viewer — Quadrant Layout
-  Compact solar system diagram.
 -->
 <div class="layout layout--col gap--space-between">
   <div class="columns">
@@ -10,7 +9,13 @@
   </div>
   <div class="columns">
     <div class="column">
-      <img src="data:image/svg+xml;base64,{{ img_quad }}" width="300" height="210" />
+      {% for planet in planets %}
+      {% if forloop.index <= 4 %}
+      <div style="margin-bottom:4px">
+        <strong>{{ planet.name }}</strong> {{ planet.distance }} AU
+      </div>
+      {% endif %}
+      {% endfor %}
     </div>
   </div>
   <div class="columns">
