@@ -6,7 +6,12 @@
       "WebFetch(domain:trmnl.com)",
       "WebFetch(domain:docs.trmnl.com)",
       "WebFetch(domain:usetrmnl.com)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:help.usetrmnl.com)",
+      "WebFetch(domain:help.trmnl.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(cp:*)",
+      "Bash(rm:*)"
     ]
   }
 }
