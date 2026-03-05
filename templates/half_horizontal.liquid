@@ -1,0 +1,36 @@
+<!--
+  TRMNL Crypto Tracker — Half Horizontal Layout
+  Compact view showing top coins with price and 24h change.
+-->
+<div class="layout layout--col gap--space-between">
+  <div class="columns">
+    <div class="column">
+      <div class="markdown">
+        <h2>Crypto</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      {% for coin in coins %}
+      {% if forloop.index <= 3 %}
+      <div class="meta" {% unless forloop.last %}style="margin-bottom:8px"{% endunless %}>
+        <span class="title title--small">{{ coin.symbol }}</span>
+        <span class="description">
+          {{ coin.price }}
+          {% if coin.change_direction == "up" %}&#9650;{% else %}&#9660;{% endif %}
+          {{ coin.change_display }}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <span class="label label--gray">{{ count }} coins</span>
+    </div>
+  </div>
+</div>

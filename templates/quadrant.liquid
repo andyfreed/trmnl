@@ -1,0 +1,26 @@
+<!--
+  TRMNL Crypto Tracker — Quadrant Layout
+  Shows the top coin (BTC) in a compact view.
+-->
+<div class="layout layout--col gap--space-between">
+  {% if top_coin %}
+  <div class="columns">
+    <div class="column">
+      <span class="title title--small">{{ top_coin.symbol }}</span>
+    </div>
+  </div>
+  <div class="columns">
+    <div class="column">
+      <span class="title">{{ top_coin.price }}</span>
+    </div>
+  </div>
+  <div class="columns">
+    <div class="column">
+      <span class="description">
+        {% if top_coin.change_direction == "up" %}&#9650;{% else %}&#9660;{% endif %}
+        {{ top_coin.change_display }}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+</div>

@@ -1,0 +1,9 @@
+name: Crypto Tracker
+description: Track cryptocurrency prices on your TRMNL e-ink display
+strategy: polling
+polling_url: https://your-vercel-app.vercel.app/api
+refresh_frequency: 15  # minutes
+layouts:
+  - full
+  - half_horizontal
+  - quadrant
