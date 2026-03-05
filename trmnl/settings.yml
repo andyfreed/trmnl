@@ -1,8 +1,8 @@
-name: Crypto Tracker
-description: Track cryptocurrency prices on your TRMNL e-ink display
+name: Solar System Viewer
+description: View real-time planet positions around the Sun on your TRMNL e-ink display
 strategy: polling
 polling_url: https://your-vercel-app.vercel.app/api
-refresh_frequency: 15  # minutes
+refresh_frequency: 60  # minutes
 layouts:
   - full
   - half_horizontal

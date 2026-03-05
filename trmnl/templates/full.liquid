@@ -1,47 +1,30 @@
 <!--
-  TRMNL Crypto Tracker — Full Screen Layout
-  Paste this into TRMNL's Markup Editor for your Private Plugin.
+  TRMNL Solar System Viewer — Full Screen Layout
+  Shows planet positions around the Sun with distance data.
 -->
 <div class="layout layout--col">
   <div class="columns">
     <div class="column">
       <div class="markdown">
-        <h1>Crypto Tracker</h1>
+        <h1>Solar System</h1>
       </div>
     </div>
-  </div>
-
-  <div class="columns">
-    <div class="column">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Coin</th>
-            <th style="text-align:right">Price</th>
-            <th style="text-align:right">24h</th>
-            <th style="text-align:right">Mkt Cap</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for coin in coins %}
-          <tr>
-            <td><strong>{{ coin.symbol }}</strong></td>
-            <td style="text-align:right">{{ coin.price }}</td>
-            <td style="text-align:right">
-              {% if coin.change_direction == "up" %}&#9650;{% else %}&#9660;{% endif %}
-              {{ coin.change_display }}
-            </td>
-            <td style="text-align:right">{{ coin.market_cap }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="column" style="text-align:right">
+      <span class="label label--gray">{{ date }} {{ time_utc }}</span>
     </div>
   </div>
 
   <div class="columns">
-    <div class="column">
-      <span class="label label--gray">{{ count }} coins tracked</span>
+    <div class="column" style="flex:3">
+      {{ svg_full }}
+    </div>
+    <div class="column" style="flex:1">
+      {% for planet in planets %}
+      <div class="meta" style="margin-bottom:4px">
+        <span class="title title--small">{{ planet.name }}</span>
+        <span class="description">{{ planet.distance_au }} AU</span>
+      </div>
+      {% endfor %}
     </div>
   </div>
 </div>

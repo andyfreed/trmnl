@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh repo:*)"
+      "Bash(gh repo:*)",
+      "WebSearch",
+      "WebFetch(domain:trmnl.com)",
+      "WebFetch(domain:docs.trmnl.com)",
+      "WebFetch(domain:usetrmnl.com)",
+      "Bash(python:*)"
     ]
   }
 }
