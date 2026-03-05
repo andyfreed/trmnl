@@ -13,16 +13,7 @@
 
   <div class="columns">
     <div class="column" style="flex:2">
-      <div style="position:relative;width:{{ half.width }}px;height:{{ half.height }}px">
-        {% for orbit in half.orbits %}
-        <div style="position:absolute;left:{{ orbit.left }}px;top:{{ orbit.top }}px;width:{{ orbit.size }}px;height:{{ orbit.size }}px;border-radius:50%;border:1px dashed #ccc"></div>
-        {% endfor %}
-        <div style="position:absolute;left:{{ half.cx | minus: 4 }}px;top:{{ half.cy | minus: 4 }}px;width:8px;height:8px;border-radius:50%;background:#000"></div>
-        {% for p in half.planets %}
-        <div style="position:absolute;left:{{ p.left }}px;top:{{ p.top }}px;width:{{ p.dot }}px;height:{{ p.dot }}px;border-radius:50%;background:#000"></div>
-        <div style="position:absolute;left:{{ p.label_left }}px;top:{{ p.label_top }}px;transform:translateX(-50%);font-size:7px;white-space:nowrap">{{ p.abbrev }}</div>
-        {% endfor %}
-      </div>
+      <img src="data:image/svg+xml;base64,{{ img_half }}" width="350" height="210" />
     </div>
     <div class="column" style="flex:1">
       {% for planet in planets %}

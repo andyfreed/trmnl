@@ -6,6 +6,7 @@ No external API needed — positions computed from NASA/JPL orbital elements.
 """
 
 from http.server import BaseHTTPRequestHandler
+import base64
 import json
 import math
 from datetime import datetime, timezone
@@ -77,9 +78,9 @@ PLANET_ABBREV = {
     "Jupiter": "Ju", "Saturn": "Sa", "Uranus": "Ur", "Neptune": "Ne",
 }
 
-PLANET_DOT_SIZE = {
-    "Mercury": 4, "Venus": 6, "Earth": 7, "Mars": 5,
-    "Jupiter": 10, "Saturn": 9, "Uranus": 8, "Neptune": 8,
+PLANET_DOT_R = {
+    "Mercury": 2, "Venus": 3, "Earth": 3.5, "Mars": 2.5,
+    "Jupiter": 5, "Saturn": 4.5, "Uranus": 4, "Neptune": 4,
 }
 
 
@@ -128,7 +129,6 @@ def compute_planet_position(name, elems, T):
     y = x_ecl * math.sin(Omega_rad) + y_ecl * math.cos(Omega_rad)
 
     dist = math.sqrt(x * x + y * y)
-    angle = math.degrees(math.atan2(y, x)) % 360
 
     return {
         "name": name,
@@ -136,7 +136,6 @@ def compute_planet_position(name, elems, T):
         "x_au": x,
         "y_au": y,
         "distance_au": round(dist, 2),
-        "angle_deg": round(angle, 1),
         "semi_major": a,
     }
 
@@ -151,25 +150,35 @@ def scale_distance(au, max_au=32.0, max_px=200):
     return (math.sqrt(au) / math.sqrt(max_au)) * max_px
 
 
-def compute_layout(planets, width, height):
-    """Pre-compute all pixel positions for a given layout size."""
-    cx = int(width / 2)
-    cy = int(height / 2)
-    margin = 25
+def generate_svg(planets, width, height, label_mode="full"):
+    cx = width / 2
+    cy = height / 2
+    margin = 30
     max_r = min(cx, cy) - margin
 
-    # Orbital rings
-    orbits = []
-    for p in planets:
-        r = int(scale_distance(p["semi_major"], max_px=max_r))
-        orbits.append({
-            "left": cx - r,
-            "top": cy - r,
-            "size": r * 2,
-        })
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" '
+        f'style="background:white">',
+    ]
 
-    # Planet positions
-    positioned = []
+    # Orbital rings
+    for name, elems in PLANETS.items():
+        a = elems["a"][0]
+        r = scale_distance(a, max_px=max_r)
+        lines.append(
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" '
+            f'fill="none" stroke="#999" stroke-width="0.5" '
+            f'stroke-dasharray="3,5"/>'
+        )
+
+    # Sun
+    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6" fill="black"/>')
+    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="white"/>')
+    lines.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="2" fill="black"/>')
+
+    # Planets
     for p in planets:
         dist = math.sqrt(p["x_au"] ** 2 + p["y_au"] ** 2)
         if dist < 0.001:
@@ -177,58 +186,56 @@ def compute_layout(planets, width, height):
         dist_px = scale_distance(dist, max_px=max_r)
         angle = math.atan2(p["y_au"], p["x_au"])
         px = cx + dist_px * math.cos(angle)
-        py = cy - dist_px * math.sin(angle)  # SVG/screen y is inverted
+        py = cy - dist_px * math.sin(angle)
 
-        dot = PLANET_DOT_SIZE.get(p["name"], 6)
-        positioned.append({
-            "name": p["name"],
-            "abbrev": p["abbrev"],
-            "distance_au": p["distance_au"],
-            "left": int(px - dot / 2),
-            "top": int(py - dot / 2),
-            "dot": dot,
-            "label_left": int(px),
-            "label_top": int(py - dot / 2 - 3),
-            "is_earth": p["name"] == "Earth",
-            "ring_left": int(px - dot / 2 - 2),
-            "ring_top": int(py - dot / 2 - 2),
-            "ring_size": dot + 4,
-        })
+        dot_r = PLANET_DOT_R.get(p["name"], 3)
 
-    return {
-        "width": width,
-        "height": height,
-        "cx": cx,
-        "cy": cy,
-        "orbits": orbits,
-        "planets": positioned,
-    }
+        lines.append(
+            f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{dot_r}" fill="black"/>'
+        )
+
+        # Earth gets a ring marker
+        if p["name"] == "Earth":
+            lines.append(
+                f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{dot_r + 2.5}" '
+                f'fill="none" stroke="black" stroke-width="1.2"/>'
+            )
+
+        label = p["name"] if label_mode == "full" else p["abbrev"]
+        font_size = 10 if label_mode == "full" else 9
+        ly = py - dot_r - 5
+        lines.append(
+            f'<text x="{px:.1f}" y="{ly:.1f}" text-anchor="middle" '
+            f'font-family="sans-serif" font-size="{font_size}" '
+            f'fill="black">{label}</text>'
+        )
+
+    lines.append('</svg>')
+    return '\n'.join(lines)
+
+
+def svg_to_base64(svg_str):
+    return base64.b64encode(svg_str.encode('utf-8')).decode('ascii')
 
 
 def build_response():
     raw_planets = compute_all_planets()
     now = datetime.now(timezone.utc)
 
-    # Pre-compute pixel positions for each layout
-    full = compute_layout(raw_planets, 450, 380)
-    half = compute_layout(raw_planets, 320, 200)
-    quadrant = compute_layout(raw_planets, 280, 200)
+    svg_full = generate_svg(raw_planets, 480, 410, label_mode="full")
+    svg_half = generate_svg(raw_planets, 350, 210, label_mode="abbrev")
+    svg_quad = generate_svg(raw_planets, 300, 210, label_mode="abbrev")
 
-    # Simplified planet list for sidebar
     planet_list = [
-        {
-            "name": p["name"],
-            "abbrev": p["abbrev"],
-            "distance_au": p["distance_au"],
-        }
+        {"name": p["name"], "abbrev": p["abbrev"], "distance_au": p["distance_au"]}
         for p in raw_planets
     ]
 
     return {
         "planets": planet_list,
-        "full": full,
-        "half": half,
-        "quadrant": quadrant,
+        "img_full": svg_to_base64(svg_full),
+        "img_half": svg_to_base64(svg_half),
+        "img_quad": svg_to_base64(svg_quad),
         "date": now.strftime("%b %d, %Y"),
         "time_utc": now.strftime("%H:%M UTC"),
     }

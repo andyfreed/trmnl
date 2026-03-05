@@ -16,19 +16,7 @@
 
   <div class="columns">
     <div class="column" style="flex:3">
-      <div style="position:relative;width:{{ full.width }}px;height:{{ full.height }}px">
-        {% for orbit in full.orbits %}
-        <div style="position:absolute;left:{{ orbit.left }}px;top:{{ orbit.top }}px;width:{{ orbit.size }}px;height:{{ orbit.size }}px;border-radius:50%;border:1px dashed #ccc"></div>
-        {% endfor %}
-        <div style="position:absolute;left:{{ full.cx | minus: 5 }}px;top:{{ full.cy | minus: 5 }}px;width:10px;height:10px;border-radius:50%;background:#000"></div>
-        {% for p in full.planets %}
-        {% if p.is_earth %}
-        <div style="position:absolute;left:{{ p.ring_left }}px;top:{{ p.ring_top }}px;width:{{ p.ring_size }}px;height:{{ p.ring_size }}px;border-radius:50%;border:1px solid #000"></div>
-        {% endif %}
-        <div style="position:absolute;left:{{ p.left }}px;top:{{ p.top }}px;width:{{ p.dot }}px;height:{{ p.dot }}px;border-radius:50%;background:#000"></div>
-        <div style="position:absolute;left:{{ p.label_left }}px;top:{{ p.label_top }}px;transform:translateX(-50%);font-size:8px;white-space:nowrap">{{ p.name }}</div>
-        {% endfor %}
-      </div>
+      <img src="data:image/svg+xml;base64,{{ img_full }}" width="480" height="410" />
     </div>
     <div class="column" style="flex:1">
       {% for planet in planets %}
